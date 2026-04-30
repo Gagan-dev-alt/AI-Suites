@@ -1,0 +1,32 @@
+{
+  "name": "@ai-suites/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "lint": "eslint .",
+    "seed:openrouter": "tsx src/seed-openrouter.ts",
+    "test": "echo \"No tests yet for db\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@ai-suites/ai": "workspace:*",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.1",
+    "mysql2": "^3.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.3",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.21.0"
+  }
+}
