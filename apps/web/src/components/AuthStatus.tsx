@@ -7,7 +7,7 @@ export function AuthStatus() {
 
   if (isPending) {
     return (
-      <div className="h-10 rounded-[8px] border border-[var(--hairline)] bg-[var(--surface-card)] px-3 py-2 text-sm text-[var(--muted)]">
+      <div className="h-10 rounded-lg border border-(--hairline) bg-(--surface-card) px-3 py-2 text-sm text-(--muted)">
         Checking session
       </div>
     );
@@ -23,7 +23,7 @@ export function AuthStatus() {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="hidden items-center gap-2 rounded-[8px] border border-[var(--hairline)] bg-[var(--surface-card)] px-3 py-2 text-sm text-[var(--ink)] sm:flex">
+      <div className="hidden items-center gap-2 rounded-lg border border-(--hairline) bg-(--surface-card) px-3 py-2 text-sm text-(--ink) sm:flex">
         <UserRound className="size-4" aria-hidden="true" />
         <span className="max-w-40 truncate">{session.user.email}</span>
       </div>

@@ -27,6 +27,11 @@ type OpenRouterModelsResponse = {
 
 type OpenRouterChatResponse = {
   model?: string;
+  error?: {
+    code?: string | number;
+    message?: string;
+    metadata?: unknown;
+  };
   choices?: Array<{
     message?: {
       content?: string;
@@ -83,7 +88,11 @@ export class OpenRouterClient implements AiProvider {
     const payload = (await response.json().catch(() => null)) as OpenRouterChatResponse | null;
 
     if (!response.ok) {
-      throw new OpenRouterError("OpenRouter chat completion failed.", response.status, payload);
+      throw new OpenRouterError(
+        createOpenRouterErrorMessage(response.status, payload),
+        response.status,
+        payload
+      );
     }
 
     const content = payload?.choices?.[0]?.message?.content;
@@ -102,6 +111,26 @@ export class OpenRouterClient implements AiProvider {
       raw: payload
     };
   }
+}
+
+function createOpenRouterErrorMessage(status: number, payload: OpenRouterChatResponse | null) {
+  const providerMessage = payload?.error?.message;
+
+  if (status === 429) {
+    return providerMessage
+      ? `OpenRouter rate limit reached: ${providerMessage}`
+      : "OpenRouter rate limit reached. Wait a bit, choose another model, or use a key with available quota.";
+  }
+
+  if (status === 401 || status === 403) {
+    return providerMessage
+      ? `OpenRouter rejected the API key: ${providerMessage}`
+      : "OpenRouter rejected the API key. Check OPENROUTER_API_KEY in .env.";
+  }
+
+  return providerMessage
+    ? `OpenRouter chat completion failed: ${providerMessage}`
+    : "OpenRouter chat completion failed.";
 }
 
 export function createOpenRouterClient(apiKey = process.env.OPENROUTER_API_KEY) {

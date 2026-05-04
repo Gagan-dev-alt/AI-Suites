@@ -11,9 +11,12 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@ai-suites/ai": "workspace:*",
     "@ai-suites/auth": "workspace:*",
+    "@ai-suites/db": "workspace:*",
     "better-auth": "^1.6.5",
     "cors": "^2.8.5",
+    "drizzle-orm": "^0.45.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "pino": "^10.3.1",

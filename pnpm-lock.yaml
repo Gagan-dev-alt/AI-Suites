@@ -35,9 +35,15 @@ importers:
 
   apps/api:
     dependencies:
+      '@ai-suites/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@ai-suites/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@ai-suites/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       better-auth:
         specifier: ^1.6.5
         version: 1.6.9(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(kysely@0.28.16)(mysql2@3.22.3(@types/node@24.12.2)))(mysql2@3.22.3(@types/node@24.12.2))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -47,6 +53,9 @@ importers:
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
+      drizzle-orm:
+        specifier: ^0.45.1
+        version: 0.45.2(kysely@0.28.16)(mysql2@3.22.3(@types/node@24.12.2))
       express:
         specifier: ^5.2.1
         version: 5.2.1

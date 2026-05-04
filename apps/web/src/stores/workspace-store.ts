@@ -6,6 +6,6 @@ type WorkspaceState = {
 };
 
 export const useWorkspaceStore = create<WorkspaceState>((set) => ({
-  selectedModel: "Claude Sonnet",
+  selectedModel: "openrouter/free",
   setSelectedModel: (selectedModel) => set({ selectedModel })
 }));

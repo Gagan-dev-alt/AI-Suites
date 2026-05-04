@@ -4,15 +4,15 @@ import * as React from "react";
 import { cn } from "../../lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[8px] px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--ring) disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-active)]",
+          "bg-(--primary) text-(--primary-foreground) hover:bg-(--primary-active)",
         secondary:
-          "border border-[var(--hairline-strong)] bg-[var(--surface-card)] text-[var(--ink)] hover:bg-[var(--surface-strong)]",
-        ghost: "text-[var(--ink)] hover:bg-[var(--surface-strong)]"
+          "border border-(--hairline-strong) bg-(--surface-card) text-(--ink) hover:bg-(--surface-strong)",
+        ghost: "text-(--ink) hover:bg-(--surface-strong)"
       },
       size: {
         default: "h-10 px-4",
