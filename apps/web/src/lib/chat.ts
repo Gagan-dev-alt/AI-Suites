@@ -1,9 +1,20 @@
 import type { GenerationHistoryItem } from "./api";
 
+export type ChatAttachment = {
+  id: string;
+  kind: "file" | "image" | "text";
+  name: string;
+  mimeType: string;
+  previewUrl?: string;
+  size: number;
+  textContent?: string;
+};
+
 export type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  attachments?: ChatAttachment[];
   outputId?: string | null;
   modelId?: string | null;
   createdAt: string;
@@ -19,15 +30,46 @@ export type HistoryGroup = {
 
 export function buildContextPrompt(messages: ChatMessage[]) {
   if (messages.length <= 1) {
-    return messages[messages.length - 1]?.content ?? "";
+    return formatMessageForContext(messages[messages.length - 1]);
   }
   const lines: string[] = [];
   for (const m of messages) {
-    if (!m.content) continue;
-    lines.push(`${m.role === "user" ? "User" : "Assistant"}: ${m.content}`);
+    const content = formatMessageForContext(m);
+    if (!content) continue;
+    lines.push(`${m.role === "user" ? "User" : "Assistant"}: ${content}`);
   }
   lines.push("Assistant:");
   return lines.join("\n");
+}
+
+function formatMessageForContext(message: ChatMessage | undefined) {
+  if (!message) return "";
+
+  const attachmentContext = formatAttachmentsForPrompt(message.attachments ?? []);
+  if (!attachmentContext) return message.content;
+  if (!message.content.trim()) return attachmentContext;
+
+  return `${message.content}\n\n${attachmentContext}`;
+}
+
+function formatAttachmentsForPrompt(attachments: ChatAttachment[]) {
+  if (attachments.length === 0) return "";
+
+  const blocks = attachments.map((attachment, index) => {
+    const label = `Attachment ${index + 1}: ${attachment.name} (${attachment.mimeType || "unknown"}, ${attachment.size} bytes)`;
+
+    if (attachment.textContent) {
+      return `${label}\n${attachment.textContent}`;
+    }
+
+    if (attachment.kind === "image") {
+      return `${label}\nImage preview is available in the chat UI, but the image bytes are not included in this text-only request.`;
+    }
+
+    return `${label}\nFile bytes are not included in this text-only request.`;
+  });
+
+  return `Attached content:\n${blocks.join("\n\n")}`;
 }
 
 export function reconstructMessagesFromGeneration(item: GenerationHistoryItem): ChatMessage[] {

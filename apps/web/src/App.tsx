@@ -1,6 +1,6 @@
 import { BookmarkCheck, LogOut, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Route, Routes } from "react-router";
 import { Button } from "./components/ui/button";
 import { ChatArea } from "./components/ChatArea";
@@ -24,6 +24,7 @@ import {
   generateId,
   groupByRecency,
   reconstructMessagesFromGeneration,
+  type ChatAttachment,
   type ChatMessage
 } from "./lib/chat";
 import { SignIn } from "./SignIn";
@@ -46,8 +47,11 @@ function Workspace() {
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [threadSearch, setThreadSearch] = useState("");
   const [overlay, setOverlay] = useState<null | "saved" | "settings">(null);
+  const messagesRef = useRef(messages);
+  const attachmentsRef = useRef(attachments);
 
   const modelsQuery = useQuery({
     enabled: Boolean(session),
@@ -72,6 +76,21 @@ function Workspace() {
   );
 
   useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
+    attachmentsRef.current = attachments;
+  }, [attachments]);
+
+  useEffect(() => {
+    return () => {
+      revokeAttachmentPreviews(attachmentsRef.current);
+      revokeAttachmentPreviews(messagesRef.current.flatMap((message) => message.attachments ?? []));
+    };
+  }, []);
+
+  useEffect(() => {
     const firstModel = modelOptions[0];
     if (firstModel && !modelOptions.some((model) => model.id === selectedModel)) {
       setSelectedModel(firstModel.id);
@@ -92,25 +111,30 @@ function Workspace() {
   });
 
   const isSending = runGeneration.isPending;
-  const canSend = Boolean(session) && input.trim().length > 0 && !isSending;
+  const canSend = Boolean(session) && (input.trim().length > 0 || attachments.length > 0) && !isSending;
 
   function handleNewChat() {
+    revokeAttachmentPreviews(attachments);
+    revokeAttachmentPreviews(messages.flatMap((message) => message.attachments ?? []));
     setMessages([]);
     setInput("");
+    setAttachments([]);
     runGeneration.reset();
   }
 
   async function handleSend(promptOverride?: string) {
     const raw = (promptOverride ?? input).trim();
-    if (!raw || !session || isSending) {
+    if ((!raw && attachments.length === 0) || !session || isSending) {
       return;
     }
 
     const history = messages;
+    const sentAttachments = promptOverride ? [] : attachments;
     const userMessage: ChatMessage = {
       id: generateId(),
       role: "user",
-      content: raw,
+      content: raw || "Attached content",
+      attachments: sentAttachments,
       createdAt: new Date().toISOString()
     };
     const pendingAssistant: ChatMessage = {
@@ -124,6 +148,7 @@ function Workspace() {
 
     setMessages([...history, userMessage, pendingAssistant]);
     setInput("");
+    setAttachments([]);
 
     const promptToSend = buildContextPrompt([...history, userMessage]);
 
@@ -172,8 +197,11 @@ function Workspace() {
   }
 
   function loadHistoryItem(item: GenerationHistoryItem) {
+    revokeAttachmentPreviews(attachments);
+    revokeAttachmentPreviews(messages.flatMap((message) => message.attachments ?? []));
     setMessages(reconstructMessagesFromGeneration(item));
     setInput("");
+    setAttachments([]);
     runGeneration.reset();
     if (item.modelId) {
       setSelectedModel(item.modelId);
@@ -181,6 +209,8 @@ function Workspace() {
   }
 
   function loadSavedItem(item: SavedItem) {
+    revokeAttachmentPreviews(attachments);
+    revokeAttachmentPreviews(messages.flatMap((message) => message.attachments ?? []));
     const created = item.createdAt ?? new Date().toISOString();
     const reconstructed: ChatMessage[] = [];
     if (item.prompt) {
@@ -202,6 +232,7 @@ function Workspace() {
       saved: true
     });
     setMessages(reconstructed);
+    setAttachments([]);
     setOverlay(null);
     if (item.modelId) {
       setSelectedModel(item.modelId);
@@ -241,6 +272,7 @@ function Workspace() {
 
       <ChatArea
         activeModel={activeModel}
+        attachments={attachments}
         canSend={canSend}
         input={input}
         isSending={isSending}
@@ -249,7 +281,15 @@ function Workspace() {
         onInputChange={setInput}
         onOpenSaved={() => setOverlay("saved")}
         onOpenSettings={() => setOverlay("settings")}
+        onAddAttachments={(items) => setAttachments((prev) => [...prev, ...items])}
         onPickSuggestion={setInput}
+        onRemoveAttachment={(id) => {
+          setAttachments((prev) => {
+            const removed = prev.filter((attachment) => attachment.id === id);
+            revokeAttachmentPreviews(removed);
+            return prev.filter((attachment) => attachment.id !== id);
+          });
+        }}
         onSaveMessage={handleSaveMessage}
         onSelectModel={setSelectedModel}
         onSubmit={() => void handleSend()}
@@ -275,6 +315,14 @@ function Workspace() {
       ) : null}
     </main>
   );
+}
+
+function revokeAttachmentPreviews(attachments: ChatAttachment[]) {
+  for (const attachment of attachments) {
+    if (attachment.previewUrl) {
+      URL.revokeObjectURL(attachment.previewUrl);
+    }
+  }
 }
 
 function OverlayPanel({
